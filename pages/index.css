@@ -1,0 +1,34 @@
+html, body {
+    height: 100%;
+    background-color: darkgray;
+    color: snow;
+    font-family: "Open Sans", sans-serif;
+}
+#topbar {
+    background-color: limegreen;
+    height: 90px;
+    width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 99;
+}
+#topbar-left {
+    position: relative;
+    float: left;
+    height: inherit;
+    width: 300px;
+    background-color: darkgreen;
+    color: limegreen;
+    text-align: center;
+    left: 10px;
+    overflow-y: hidden;
+}
+#topbar-right {
+    position: relative;
+    float: right;
+    height: inherit;
+    font-size: larger;
+    text-align: center;
+    overflow-y: hidden;
+}
