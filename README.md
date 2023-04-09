@@ -4,3 +4,4 @@ The new and improved version of my GoMessenger. Now with accounts, design change
 If you have any questions or ideas, feel free to write an email to: contact@gomessenger.link
   If you want to encrypt your email with PGP:
     PublicKey: www.gomessenger.link/PublicKey
+    Fingerprint: f1884ecfd460d5f66d9fbccd67366d95cfe8d84d
