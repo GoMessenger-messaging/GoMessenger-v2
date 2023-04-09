@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/Jero075/GoMessenger-V2/data"
 	"net/http"
 	"strings"
 	"time"
@@ -13,11 +14,14 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(400)
 		return
 	}
-	username = r.Form.Get("username")
-	password = r.Form.Get("password")
+	username := r.Form.Get("username")
+	password := r.Form.Get("password")
 
-	data.AddUser(username, password)
-	w.WriteHeader(201)
+	id := data.AddUser(username, password)
+	_, wErr := w.Write([]byte(id))
+	if wErr != nil {
+		fmt.Println(time.Now().UTC().String() + " | Error responding to Signup request: " + err.Error())
+	}
 }
 func Login(w http.ResponseWriter, r *http.Request) {
 
@@ -75,7 +79,7 @@ func main() {
 		if strings.HasSuffix(r.URL.Path, ".html") {
 			http.Redirect(w, r, r.URL.Path[0:len(r.URL.Path)-5], http.StatusFound)
 		}
-		if r.URL.Path != "/" && r.URL.Path != "/index.html" {
+		if r.URL.Path != "/" && r.URL.Path != "/index" && r.URL.Path != "/home" {
 			http.ServeFile(w, r, "pages/404.html")
 			return
 		}
@@ -91,7 +95,7 @@ func main() {
 	http.HandleFunc("/webclient.js", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, "pages/webclient.js") })
 
 	//images
-	http.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, "pages/images/favicon.ico") })
+	http.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, "pages/favicon.ico") })
 
 	//Server
 	err := http.ListenAndServe(":8080", nil)

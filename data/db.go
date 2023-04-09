@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"github.com/Jero075/GoMessenger-V2/encryption"
 	"os"
 	"time"
@@ -54,7 +55,10 @@ type DB struct {
 
 func Idgen(n int) string {
 	b := make([]byte, n)
-	rand.Read(b)
+	_, err := rand.Read(b)
+	if err != nil {
+		fmt.Println(time.Now().UTC().String() + " | Error generating random ID: " + err.Error())
+	}
 	id := hex.EncodeToString(b)
 	return id[:n]
 }
@@ -62,21 +66,30 @@ func Idgen(n int) string {
 func OpenDB() DB {
 	f, _ := os.ReadFile("data/db.json")
 	db := DB{}
-	json.Unmarshal(f, &db)
+	err := json.Unmarshal(f, &db)
+	if err != nil {
+		fmt.Println(time.Now().UTC().String() + " | Error reading db: " + err.Error())
+	}
 	return db
 }
 func SaveDB(db DB) {
 	f, _ := json.MarshalIndent(db, "", "	")
-	os.WriteFile("data/db.json", f, 0644)
+	err := os.WriteFile("data/db.json", f, 0644)
+	if err != nil {
+		fmt.Println(time.Now().UTC().String() + " | Error writing to db: " + err.Error())
+	}
 }
 
-func AddUser(username string, password string) {
+func AddUser(username string, password string) (userID string) {
 	db := OpenDB()
 
 	pub, pri := encryption.GenerateKeys(username, password)
-	db.Users = append(db.Users, User{username, Idgen(8), encryption.GenerateHash512(password, username), pub, pri, false, []string{}})
+	id := Idgen(8)
+	db.Users = append(db.Users, User{username, id, encryption.GenerateHash512(password, username), pub, pri, false, []string{}})
 
 	SaveDB(db)
+
+	return id
 }
 func RemoveUser(id string) {
 	db := OpenDB()
