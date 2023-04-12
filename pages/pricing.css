@@ -1,0 +1,55 @@
+html, body {
+    position: relative;
+    height: 100%;
+    background-color: darkgray;
+    color: snow;
+    font-family: "Open Sans", sans-serif;
+    font-size: larger;
+}
+#header {
+    background-color: limegreen;
+    height: 125px;
+    width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 10;
+}
+#header-left {
+    position: relative;
+    float: left;
+    height: inherit;
+    width: 350px;
+    background-color: darkgreen;
+    color: limegreen;
+    text-align: center;
+    overflow-y: hidden;
+}
+#header-right {
+    position: relative;
+    float: right;
+    height: inherit;
+    text-align: center;
+    overflow-y: hidden;
+}
+#home {
+    background-color: yellowgreen;
+}
+#about {
+    background-color: yellowgreen;
+}
+#pricing {
+    background-color: yellowgreen;
+}
+#main {
+    position: relative;
+    top: 125px;
+}
+#footer {
+    position: relative;
+    background-color: #606060;
+    font-size: medium;
+    width: 100%;
+    top: 300px;
+    left: 0;
+}

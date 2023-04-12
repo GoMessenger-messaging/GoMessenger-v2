@@ -18,7 +18,12 @@ type User struct {
 	PUBKey   ecdsa.PublicKey  `json:"pub_key"`
 	PRIKey   ecdsa.PrivateKey `json:"pri_key"`
 	Premium  bool             `json:"premium"`
-	Sessions []string         `json:"sessions"`
+	Sessions []Session        `json:"sessions"`
+}
+
+type Session struct {
+	ID      string    `json:"id"`
+	Expires time.Time `json:"expires"`
 }
 
 type PublicChannel struct {
@@ -85,7 +90,7 @@ func AddUser(username string, password string) (userID string) {
 
 	pub, pri := encryption.GenerateKeys(username, password)
 	id := Idgen(8)
-	db.Users = append(db.Users, User{username, id, encryption.GenerateHash512(password, username), pub, pri, false, []string{}})
+	db.Users = append(db.Users, User{username, id, encryption.GenerateHash512(password, username), pub, pri, false, []Session{}})
 
 	SaveDB(db)
 
@@ -140,6 +145,16 @@ func ChangeUser(new User) {
 	}
 
 	SaveDB(db)
+}
+func GetUser(id string) (userData User) {
+	db := OpenDB()
+
+	for _, user := range db.Users {
+		if user.ID == id {
+			return user
+		}
+	}
+	return User{}
 }
 func AddPublicChannel(name string, creator string) {
 	db := OpenDB()
