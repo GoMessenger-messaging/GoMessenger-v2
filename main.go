@@ -54,11 +54,14 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 	}
 	username := r.Form.Get("username")
 	password := r.Form.Get("password")
-
-	id := data.AddUser(username, password)
-	_, wErr := w.Write([]byte(id))
-	if wErr != nil {
-		fmt.Println(time.Now().UTC().String() + " | Error responding to Signup request: " + err.Error())
+	if username != "" && password != "" {
+		id := data.AddUser(username, password)
+		_, wErr := w.Write([]byte(id))
+		if wErr != nil {
+			fmt.Println(time.Now().UTC().String() + " | Error responding to Signup request: " + err.Error())
+		}
+	} else {
+		w.WriteHeader(400)
 	}
 }
 func Login(w http.ResponseWriter, r *http.Request) {
@@ -116,11 +119,14 @@ func ChangeUsername(w http.ResponseWriter, r *http.Request) {
 		}
 		id := r.Form.Get("id")
 		username := r.Form.Get("username")
-
-		user := data.GetUser(id)
-		user.Username = username
-		data.ChangeUser(user)
-		w.WriteHeader(201)
+		if username != "" {
+			user := data.GetUser(id)
+			user.Username = username
+			data.ChangeUser(user)
+			w.WriteHeader(201)
+		} else {
+			w.WriteHeader(400)
+		}
 	} else {
 		if status == 1 {
 			w.WriteHeader(400)
@@ -138,16 +144,84 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 	id := r.Form.Get("id")
 	passwordNew := r.Form.Get("new_password")
 	passwordOld := r.Form.Get("old_password")
-
-	user := data.GetUser(id)
-
-	if encryption.GenerateHash512(passwordOld, user.Username) == user.PWHash {
-		user.PWHash = encryption.GenerateHash512(passwordNew, user.Username)
-		data.ChangeUser(user)
-		w.WriteHeader(201)
+	if passwordNew != "" {
+		user := data.GetUser(id)
+		if encryption.GenerateHash512(passwordOld, user.Username) == user.PWHash {
+			user.PWHash = encryption.GenerateHash512(passwordNew, user.Username)
+			data.ChangeUser(user)
+			w.WriteHeader(201)
+		} else {
+			w.WriteHeader(401)
+		}
 	} else {
-		w.WriteHeader(401)
+		w.WriteHeader(400)
 	}
+}
+func ChangePhoto(w http.ResponseWriter, r *http.Request) {
+	//TODO
+}
+func JoinChannel(w http.ResponseWriter, r *http.Request) {
+	valid, status := CheckSession(r)
+	if valid {
+		err := r.ParseForm()
+		if err != nil {
+			w.WriteHeader(400)
+			return
+		}
+		id := r.Form.Get("id")
+		channelId := r.Form.Get("channel")
+		channel := data.GetPublicChannel(channelId)
+		if channel.ID != "" {
+			user := data.GetUser(id)
+			user.Access = append(user.Access, channel.ID)
+			data.ChangeUser(user)
+			w.WriteHeader(201)
+		} else {
+			w.WriteHeader(400)
+		}
+	} else {
+		if status == 1 {
+			w.WriteHeader(400)
+		} else if status == 2 {
+			w.WriteHeader(401)
+		}
+	}
+}
+func LeavePublicChannel(w http.ResponseWriter, r *http.Request) {
+	valid, status := CheckSession(r)
+	if valid {
+		err := r.ParseForm()
+		if err != nil {
+			w.WriteHeader(400)
+			return
+		}
+		id := r.Form.Get("id")
+		channelId := r.Form.Get("channel")
+		channel := data.GetPublicChannel(channelId)
+		if channel.ID != "" {
+			user := data.GetUser(id)
+			for i, id := range user.Access {
+				if id == channel.ID {
+					user.Access[i] = user.Access[len(user.Access)-1]
+					user.Access = user.Access[:len(user.Access)-1]
+					break
+				}
+			}
+			data.ChangeUser(user)
+			w.WriteHeader(201)
+		} else {
+			w.WriteHeader(400)
+		}
+	} else {
+		if status == 1 {
+			w.WriteHeader(400)
+		} else if status == 2 {
+			w.WriteHeader(401)
+		}
+	}
+}
+func LeavePrivateChannel(w http.ResponseWriter, r *http.Request) {
+	//TODO
 }
 func RemoveSessions(w http.ResponseWriter, r *http.Request) {
 	valid, status := CheckSession(r)
@@ -221,6 +295,10 @@ func main() {
 	http.HandleFunc("/api/account/info", ViewInfo)
 	http.HandleFunc("/api/account/edit/username", ChangeUsername)
 	http.HandleFunc("/api/account/edit/password", ChangePassword)
+	http.HandleFunc("/api/account/edit/photo", ChangePhoto)
+	http.HandleFunc("/api/account/edit/join", JoinChannel)
+	http.HandleFunc("/api/account/edit/leave/public", LeavePublicChannel)
+	http.HandleFunc("/api/account/edit/leave/private", LeavePrivateChannel)
 	http.HandleFunc("/api/account/edit/sessions", RemoveSessions)
 	http.HandleFunc("/api/account/edit/upgrade", UpgradeAccount)
 	http.HandleFunc("/api/account/edit/delete", DeleteAccount)

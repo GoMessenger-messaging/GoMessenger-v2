@@ -12,47 +12,50 @@ import (
 )
 
 type User struct {
-	Username string           `json:"username"`
-	ID       string           `json:"id"`
-	PWHash   string           `json:"pw_hash"`
-	Photo    string           `json:"photo"`
-	PUBKey   ecdsa.PublicKey  `json:"pub_key"`
-	PRIKey   ecdsa.PrivateKey `json:"pri_key"`
-	Premium  bool             `json:"premium"`
-	Sessions []Session        `json:"sessions"`
+	Username string           `json:"username"`      //Display name
+	ID       string           `json:"id"`            //Unique identifier
+	PWHash   string           `json:"pw_hash"`       //Hashed password
+	Photo    string           `json:"photo"`         //Profile photo
+	PUBKey   ecdsa.PublicKey  `json:"pub_key"`       //RSA Public Key
+	PRIKey   ecdsa.PrivateKey `json:"pri_key"`       //RSA Private Key
+	Access   []string         `json:"access"`        //What private channels the user has access to
+	Request  bool             `json:"join_request"`  //If Private channels have to send a request to add this user
+	Requests []string         `json:"join_requests"` //Current open requests by private channels
+	Premium  bool             `json:"premium"`       //If the user has a premium account
+	Sessions []Session        `json:"sessions"`      //The user's sessions
 }
 
 type Session struct {
-	ID      string    `json:"id"`
-	Expires time.Time `json:"expires"`
+	ID      string    `json:"id"`      //Unique identifier
+	Expires time.Time `json:"expires"` //Expiration date
 }
 
 type PublicChannel struct {
-	Name       string    `json:"name"`
-	ID         string    `json:"id"`
-	Photo      string    `json:"photo"`
-	BlockedIDs []string  `json:"blocked_ids"`
-	Admins     []string  `json:"admins"`
-	Messages   []Message `json:"messages"`
+	Name       string    `json:"name"`        //Display name
+	ID         string    `json:"id"`          //Unique identifier
+	Photo      string    `json:"photo"`       //Channel photo
+	BlockedIDs []string  `json:"blocked_ids"` //IDs of users that are blocked on this channel
+	Admins     []string  `json:"admins"`      //IDs of users that are admins of this channel
+	Messages   []Message `json:"messages"`    //Messages in this channel
 }
 
 type PrivateChannel struct {
-	Name      string    `json:"name"`
-	ID        string    `json:"id"`
-	Photo     string    `json:"photo"`
-	AccessIDs []string  `json:"access_ids"`
-	Admins    []string  `json:"admins"`
-	Messages  []Message `json:"messages"`
+	Name      string    `json:"name"`       //Display name
+	ID        string    `json:"id"`         //Unique identifier
+	Photo     string    `json:"photo"`      //Channel photo
+	AccessIDs []string  `json:"access_ids"` //IDs of users that have access to this channel
+	Admins    []string  `json:"admins"`     //IDs of users that are admins of this channel
+	Messages  []Message `json:"messages"`   //Messages in this channel
 }
 
 type Message struct {
-	ID          string    `json:"id"`
-	SenderID    string    `json:"sender_id"`
-	Time        time.Time `json:"time"`
-	Content     string    `json:"content"`
-	ReplyTo     string    `json:"reply_to"`
-	RenderMedia []string  `json:"render_media"`
-	Attachments []string  `json:"attachments"`
+	ID          string    `json:"id"`           //Unique identifier
+	SenderID    string    `json:"sender_id"`    //ID of the user that sent this message
+	Time        time.Time `json:"time"`         //Time the message was sent
+	Content     string    `json:"content"`      //Content of the message
+	ReplyTo     string    `json:"reply_to"`     //ID of the message this message is a reply to
+	RenderMedia []string  `json:"render_media"` //Media that should be rendered in the message
+	Attachments []string  `json:"attachments"`  //Attachments to the message
 }
 
 type DB struct {
@@ -93,7 +96,7 @@ func AddUser(username string, password string) (userID string) {
 
 	pub, pri := encryption.GenerateKeys(username, password)
 	id := Idgen(8)
-	db.Users = append(db.Users, User{username, id, encryption.GenerateHash512(password, username), "defaults/user.jpg", pub, pri, false, []Session{}})
+	db.Users = append(db.Users, User{username, id, encryption.GenerateHash512(password, username), "defaults/user.jpg", pub, pri, []string{}, false, []string{}, false, []Session{}})
 
 	SaveDB(db)
 
@@ -104,9 +107,13 @@ func RemoveUser(id string) {
 
 	for i, user := range db.Users {
 		if user.ID == id {
-			db.Users[i] = db.Users[len(db.Users)-1]
-			db.Users = db.Users[:len(db.Users)-1]
-			break
+			db.Users[i].Username = "[deleted]"
+			db.Users[i].PWHash = ""
+			db.Users[i].Photo = "defaults/user.jpg"
+			db.Users[i].PUBKey = ecdsa.PublicKey{}
+			db.Users[i].PRIKey = ecdsa.PrivateKey{}
+			db.Users[i].Premium = false
+			db.Users[i].Sessions = []Session{}
 		}
 	}
 	for i, channel := range db.PublicChannels {
@@ -191,37 +198,27 @@ func ChangePublicChannel(new PublicChannel) {
 
 	SaveDB(db)
 }
-func AddPrivateChannel(name string, creator string) {
+func GetPublicChannel(id string) (channelData PublicChannel) {
 	db := OpenDB()
 
-	db.PrivateChannels = append(db.PrivateChannels, PrivateChannel{name, Idgen(12), "defaults/channel.jpg", []string{creator}, []string{creator}, []Message{}})
-
-	SaveDB(db)
-}
-func RemovePrivateChannel(id string) {
-	db := OpenDB()
-
-	for i, channel := range db.PrivateChannels {
+	for _, channel := range db.PublicChannels {
 		if channel.ID == id {
-			db.PrivateChannels[i] = db.PrivateChannels[len(db.PrivateChannels)-1]
-			db.PrivateChannels = db.PrivateChannels[:len(db.PrivateChannels)-1]
-			break
+			return channel
 		}
 	}
-
-	SaveDB(db)
+	return PublicChannel{}
 }
-func ChangePrivateChannel(new PrivateChannel) {
-	db := OpenDB()
-
-	for i, channel := range db.PrivateChannels {
-		if channel.ID == new.ID {
-			db.PrivateChannels[i] = new
-			break
-		}
-	}
-
-	SaveDB(db)
+func AddPrivateChannel() {
+	//TODO
+}
+func RemovePrivateChannel() {
+	//TODO
+}
+func ChangePrivateChannel() {
+	//TODO
+}
+func GetPrivateChannel() {
+	//TODO
 }
 func AddMessagePublic(channel string, sender string, content string, replyTo string, renderMedia []string, attachments []string) {
 	db := OpenDB()
