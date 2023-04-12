@@ -93,7 +93,7 @@ func AddUser(username string, password string) (userID string) {
 
 	pub, pri := encryption.GenerateKeys(username, password)
 	id := Idgen(8)
-	db.Users = append(db.Users, User{username, id, encryption.GenerateHash512(password, username), "", pub, pri, false, []Session{}})
+	db.Users = append(db.Users, User{username, id, encryption.GenerateHash512(password, username), "defaults/user.jpg", pub, pri, false, []Session{}})
 
 	SaveDB(db)
 
@@ -162,7 +162,7 @@ func GetUser(id string) (userData User) {
 func AddPublicChannel(name string, creator string) {
 	db := OpenDB()
 
-	db.PublicChannels = append(db.PublicChannels, PublicChannel{name, Idgen(12), "", []string{}, []string{creator}, []Message{}})
+	db.PublicChannels = append(db.PublicChannels, PublicChannel{name, Idgen(12), "defaults/channel.jpg", []string{}, []string{creator}, []Message{}})
 
 	SaveDB(db)
 }
@@ -194,7 +194,7 @@ func ChangePublicChannel(new PublicChannel) {
 func AddPrivateChannel(name string, creator string) {
 	db := OpenDB()
 
-	db.PrivateChannels = append(db.PrivateChannels, PrivateChannel{name, Idgen(12), "", []string{creator}, []string{creator}, []Message{}})
+	db.PrivateChannels = append(db.PrivateChannels, PrivateChannel{name, Idgen(12), "defaults/channel.jpg", []string{creator}, []string{creator}, []Message{}})
 
 	SaveDB(db)
 }
