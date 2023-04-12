@@ -15,6 +15,7 @@ type User struct {
 	Username string           `json:"username"`
 	ID       string           `json:"id"`
 	PWHash   string           `json:"pw_hash"`
+	Photo    string           `json:"photo"`
 	PUBKey   ecdsa.PublicKey  `json:"pub_key"`
 	PRIKey   ecdsa.PrivateKey `json:"pri_key"`
 	Premium  bool             `json:"premium"`
@@ -29,6 +30,7 @@ type Session struct {
 type PublicChannel struct {
 	Name       string    `json:"name"`
 	ID         string    `json:"id"`
+	Photo      string    `json:"photo"`
 	BlockedIDs []string  `json:"blocked_ids"`
 	Admins     []string  `json:"admins"`
 	Messages   []Message `json:"messages"`
@@ -37,6 +39,7 @@ type PublicChannel struct {
 type PrivateChannel struct {
 	Name      string    `json:"name"`
 	ID        string    `json:"id"`
+	Photo     string    `json:"photo"`
 	AccessIDs []string  `json:"access_ids"`
 	Admins    []string  `json:"admins"`
 	Messages  []Message `json:"messages"`
@@ -90,7 +93,7 @@ func AddUser(username string, password string) (userID string) {
 
 	pub, pri := encryption.GenerateKeys(username, password)
 	id := Idgen(8)
-	db.Users = append(db.Users, User{username, id, encryption.GenerateHash512(password, username), pub, pri, false, []Session{}})
+	db.Users = append(db.Users, User{username, id, encryption.GenerateHash512(password, username), "", pub, pri, false, []Session{}})
 
 	SaveDB(db)
 
@@ -159,7 +162,7 @@ func GetUser(id string) (userData User) {
 func AddPublicChannel(name string, creator string) {
 	db := OpenDB()
 
-	db.PublicChannels = append(db.PublicChannels, PublicChannel{name, Idgen(12), []string{}, []string{creator}, []Message{}})
+	db.PublicChannels = append(db.PublicChannels, PublicChannel{name, Idgen(12), "", []string{}, []string{creator}, []Message{}})
 
 	SaveDB(db)
 }
@@ -191,7 +194,7 @@ func ChangePublicChannel(new PublicChannel) {
 func AddPrivateChannel(name string, creator string) {
 	db := OpenDB()
 
-	db.PrivateChannels = append(db.PrivateChannels, PrivateChannel{name, Idgen(12), []string{creator}, []string{creator}, []Message{}})
+	db.PrivateChannels = append(db.PrivateChannels, PrivateChannel{name, Idgen(12), "", []string{creator}, []string{creator}, []Message{}})
 
 	SaveDB(db)
 }

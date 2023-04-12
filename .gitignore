@@ -1,3 +1,9 @@
 .idea/
+tests/
 data/db.json
-
+uploads/*.*
+uploads/attachments/*
+uploads/media/*
+uploads/photos/*.*
+uploads/photos/channels/*
+uploads/photos/users/*
