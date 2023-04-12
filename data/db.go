@@ -45,6 +45,7 @@ type PrivateChannel struct {
 	Photo     string    `json:"photo"`      //Channel photo
 	AccessIDs []string  `json:"access_ids"` //IDs of users that have access to this channel
 	Admins    []string  `json:"admins"`     //IDs of users that are admins of this channel
+	MaxUsers  int       `json:"max_users"`  //Maximum amount of users that can be in this channel; 0 = unlimited
 	Messages  []Message `json:"messages"`   //Messages in this channel
 }
 
