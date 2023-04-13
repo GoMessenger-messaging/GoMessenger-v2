@@ -16,6 +16,7 @@ type User struct {
 	ID       string           `json:"id"`            //Unique identifier
 	PWHash   string           `json:"pw_hash"`       //Hashed password
 	Photo    string           `json:"photo"`         //Profile photo
+	Status   string           `json:"status"`        //Status message
 	PUBKey   ecdsa.PublicKey  `json:"pub_key"`       //RSA Public Key
 	PRIKey   ecdsa.PrivateKey `json:"pri_key"`       //RSA Private Key
 	Access   []string         `json:"access"`        //What private channels the user has access to
@@ -31,22 +32,24 @@ type Session struct {
 }
 
 type PublicChannel struct {
-	Name       string    `json:"name"`        //Display name
-	ID         string    `json:"id"`          //Unique identifier
-	Photo      string    `json:"photo"`       //Channel photo
-	BlockedIDs []string  `json:"blocked_ids"` //IDs of users that are blocked on this channel
-	Admins     []string  `json:"admins"`      //IDs of users that are admins of this channel
-	Messages   []Message `json:"messages"`    //Messages in this channel
+	Name        string    `json:"name"`        //Display name
+	ID          string    `json:"id"`          //Unique identifier
+	Photo       string    `json:"photo"`       //Channel photo
+	Description string    `json:"description"` //Channel description
+	BlockedIDs  []string  `json:"blocked_ids"` //IDs of users that are blocked on this channel
+	Admins      []string  `json:"admins"`      //IDs of users that are admins of this channel
+	Messages    []Message `json:"messages"`    //Messages in this channel
 }
 
 type PrivateChannel struct {
-	Name      string    `json:"name"`       //Display name
-	ID        string    `json:"id"`         //Unique identifier
-	Photo     string    `json:"photo"`      //Channel photo
-	AccessIDs []string  `json:"access_ids"` //IDs of users that have access to this channel
-	Admins    []string  `json:"admins"`     //IDs of users that are admins of this channel
-	MaxUsers  int       `json:"max_users"`  //Maximum amount of users that can be in this channel; 0 = unlimited
-	Messages  []Message `json:"messages"`   //Messages in this channel
+	Name        string    `json:"name"`        //Display name
+	ID          string    `json:"id"`          //Unique identifier
+	Photo       string    `json:"photo"`       //Channel photo
+	Description string    `json:"description"` //Channel description
+	AccessIDs   []string  `json:"access_ids"`  //IDs of users that have access to this channel
+	Admins      []string  `json:"admins"`      //IDs of users that are admins of this channel
+	MaxUsers    int       `json:"max_users"`   //Maximum amount of users that can be in this channel; 0 = unlimited
+	Messages    []Message `json:"messages"`    //Messages in this channel
 }
 
 type Message struct {
@@ -97,7 +100,7 @@ func AddUser(username string, password string) (userID string) {
 
 	pub, pri := encryption.GenerateKeys(username, password)
 	id := Idgen(8)
-	db.Users = append(db.Users, User{username, id, encryption.GenerateHash512(password, username), "defaults/user.jpg", pub, pri, []string{}, false, []string{}, false, []Session{}})
+	db.Users = append(db.Users, User{username, id, encryption.GenerateHash512(password, username), "defaults/user.jpg", "", pub, pri, []string{}, false, []string{}, false, []Session{}})
 
 	SaveDB(db)
 
@@ -170,7 +173,7 @@ func GetUser(id string) (userData User) {
 func AddPublicChannel(name string, creator string) {
 	db := OpenDB()
 
-	db.PublicChannels = append(db.PublicChannels, PublicChannel{name, Idgen(12), "defaults/channel.jpg", []string{}, []string{creator}, []Message{}})
+	db.PublicChannels = append(db.PublicChannels, PublicChannel{name, Idgen(12), "defaults/channel.jpg", "", []string{}, []string{creator}, []Message{}})
 
 	SaveDB(db)
 }

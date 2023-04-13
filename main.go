@@ -13,7 +13,8 @@ import (
 type ViewAccount struct {
 	Username string `json:"username"`
 	ID       string `json:"id"`
-	Photo	 string	`json:"photo"`
+	Photo    string `json:"photo"`
+	Status   string `json:"status"`
 	Premium  bool   `json:"premium"`
 }
 
