@@ -101,7 +101,7 @@ func ViewInfo(w http.ResponseWriter, r *http.Request) {
 	id := r.Form.Get("id")
 
 	user := data.GetUser(id)
-	resp := ViewAccount{Username: user.Username, ID: user.ID, Premium: user.Premium}
+	resp := ViewAccount{Username: user.Username, ID: user.ID, Photo: user.Photo, Status: user.Status, Premium: user.Premium}
 	jResp, jErr := json.Marshal(resp)
 	if jErr != nil {
 		fmt.Println(time.Now().UTC().String() + " | Error marshalling ViewInfo response: " + jErr.Error())
@@ -160,6 +160,9 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 	}
 }
 func ChangePhoto(w http.ResponseWriter, r *http.Request) {
+	//TODO
+}
+func ChangeStatus(w http.ResponseWriter, r *http.Request) {
 	//TODO
 }
 func JoinChannel(w http.ResponseWriter, r *http.Request) {
@@ -266,23 +269,108 @@ func DeleteAccount(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(401)
 	}
 }
-func CreateChannel(w http.ResponseWriter, r *http.Request) {
-
-}
-func DeleteChannel(w http.ResponseWriter, r *http.Request) {
-
-}
-func SendMessage(w http.ResponseWriter, r *http.Request) {
-
-}
-func DeleteMessage(w http.ResponseWriter, r *http.Request) {
-
-}
 func GetChannels(w http.ResponseWriter, r *http.Request) {
 
 }
-func GetMessages(w http.ResponseWriter, r *http.Request) {
+func CreatePublicChannel(w http.ResponseWriter, r *http.Request) {
+	valid, status := CheckSession(r)
+	if valid {
+		err := r.ParseForm()
+		if err != nil {
+			w.WriteHeader(400)
+			return
+		}
+		id := r.Form.Get("id")
+		name := r.Form.Get("name")
+		if name != "" && data.GetUser(id).ID != "" {
+			data.AddPublicChannel(name, id)
+			w.WriteHeader(201)
+		} else {
+			w.WriteHeader(400)
+		}
+	} else {
+		if status == 1 {
+			w.WriteHeader(400)
+		} else if status == 2 {
+			w.WriteHeader(401)
+		}
+	}
+}
+func CreatePrivateChannel(w http.ResponseWriter, r *http.Request) {
+	//TODO
+}
+func ChangePublicChannelName(w http.ResponseWriter, r *http.Request) {
+	//TODO
+}
+func ChangePrivateChannelName(w http.ResponseWriter, r *http.Request) {
+	//TODO
+}
+func ChangePublicChannelPhoto(w http.ResponseWriter, r *http.Request) {
+	//TODO
+}
+func ChangePrivateChannelPhoto(w http.ResponseWriter, r *http.Request) {
+	//TODO
+}
+func ChangePublicChannelDescription(w http.ResponseWriter, r *http.Request) {
+	//TODO
+}
+func ChangePrivateChannelDescription(w http.ResponseWriter, r *http.Request) {
+	//TODO
+}
+func ChangePublicChannelMembers(w http.ResponseWriter, r *http.Request) {
+	//TODO
+}
+func ChangePrivateChannelMembers(w http.ResponseWriter, r *http.Request) {
+	//TODO
+}
+func ChangePublicChannelAdmins(w http.ResponseWriter, r *http.Request) {
+	//TODO
+}
+func ChangePrivateChannelAdmins(w http.ResponseWriter, r *http.Request) {
+	//TODO
+}
+func DeletePublicChannel(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		w.WriteHeader(400)
+		return
+	}
+	id := r.Form.Get("id")
+	password := r.Form.Get("password")
+	channelId := r.Form.Get("channel")
+	channel := data.GetPublicChannel(channelId)
+	if channel.ID != "" {
+		user := data.GetUser(id)
+		if encryption.GenerateHash512(password, user.Username) == user.PWHash {
+			data.RemovePublicChannel(channelId)
+			w.WriteHeader(201)
+		} else {
+			w.WriteHeader(401)
+		}
+	} else {
+		w.WriteHeader(400)
+	}
+}
+func DeletePrivateChannel(w http.ResponseWriter, r *http.Request) {
+	//TODO
+}
+func SendPublicMessage(w http.ResponseWriter, r *http.Request) {
 
+}
+func SendPrivateMessage(w http.ResponseWriter, r *http.Request) {
+	//TODO
+}
+func DeletePublicMessage(w http.ResponseWriter, r *http.Request) {
+
+}
+func DeletePrivateMessage(w http.ResponseWriter, r *http.Request) {
+	//TODO
+}
+func GetPublicMessages(w http.ResponseWriter, r *http.Request) {
+
+}
+func GetPrivateMessages(w http.ResponseWriter, r *http.Request) {
+	//TODO
 }
 
 func main() {
@@ -298,6 +386,7 @@ func main() {
 	http.HandleFunc("/api/account/edit/username", ChangeUsername)
 	http.HandleFunc("/api/account/edit/password", ChangePassword)
 	http.HandleFunc("/api/account/edit/photo", ChangePhoto)
+	http.HandleFunc("/api/account/edit/status", ChangeStatus)
 	http.HandleFunc("/api/account/edit/join", JoinChannel)
 	http.HandleFunc("/api/account/edit/leave/public", LeavePublicChannel)
 	http.HandleFunc("/api/account/edit/leave/private", LeavePrivateChannel)
@@ -305,11 +394,26 @@ func main() {
 	http.HandleFunc("/api/account/edit/upgrade", UpgradeAccount)
 	http.HandleFunc("/api/account/edit/delete", DeleteAccount)
 	http.HandleFunc("/api/account/channels", GetChannels)
-	http.HandleFunc("/api/channel/create", CreateChannel)
-	http.HandleFunc("/api/channel/delete", DeleteChannel)
-	http.HandleFunc("/api/channel/messages", GetMessages)
-	http.HandleFunc("/api/message/send", SendMessage)
-	http.HandleFunc("/api/message/delete", DeleteMessage)
+	http.HandleFunc("/api/channel/create/public", CreatePublicChannel)
+	http.HandleFunc("/api/channel/create/private", CreatePrivateChannel)
+	http.HandleFunc("/api/channel/edit/name/public", ChangePublicChannelName)
+	http.HandleFunc("/api/channel/edit/name/private", ChangePrivateChannelName)
+	http.HandleFunc("/api/channel/edit/photo/public", ChangePublicChannelPhoto)
+	http.HandleFunc("/api/channel/edit/photo/private", ChangePrivateChannelPhoto)
+	http.HandleFunc("/api/channel/edit/description/public", ChangePublicChannelDescription)
+	http.HandleFunc("/api/channel/edit/description/private", ChangePrivateChannelDescription)
+	http.HandleFunc("/api/channel/edit/members/public", ChangePublicChannelMembers)
+	http.HandleFunc("/api/channel/edit/members/private", ChangePrivateChannelMembers)
+	http.HandleFunc("/api/channel/edit/admins/public", ChangePublicChannelAdmins)
+	http.HandleFunc("/api/channel/edit/admins/private", ChangePrivateChannelAdmins)
+	http.HandleFunc("/api/channel/edit/delete/public", DeletePublicChannel)
+	http.HandleFunc("/api/channel/edit/delete/private", DeletePrivateChannel)
+	http.HandleFunc("/api/message/send/public", SendPublicMessage)
+	http.HandleFunc("/api/message/send/private", SendPrivateMessage)
+	http.HandleFunc("/api/message/delete/public", DeletePublicMessage)
+	http.HandleFunc("/api/message/delete/private", DeletePrivateMessage)
+	http.HandleFunc("/api/channel/messages/public", GetPublicMessages)
+	http.HandleFunc("/api/channel/messages/private", GetPrivateMessages)
 
 	//Pages
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
