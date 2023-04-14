@@ -25,9 +25,10 @@ func CheckSession(r *http.Request) (bool, int) {
 	}
 	id := r.Form.Get("id")
 	session := r.Form.Get("session")
+	hash := encryption.GenerateHash256(id, session)
 	user := data.GetUser(id)
 	for _, s := range user.Sessions {
-		if s.ID == session {
+		if s.ID == hash {
 			return true, 0
 		}
 	}
@@ -79,7 +80,8 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 	if encryption.GenerateHash512(password, user.Username) == user.PWHash {
 		session := data.Idgen(32)
-		user.Sessions = append(user.Sessions, data.Session{ID: session, Expires: time.Now().Add(time.Hour)})
+		hash := encryption.GenerateHash256(id, session)
+		user.Sessions = append(user.Sessions, data.Session{ID: hash, Expires: time.Now().Add(time.Hour)})
 		data.ChangeUser(user)
 		_, wErr := w.Write([]byte(session))
 		if wErr != nil {
