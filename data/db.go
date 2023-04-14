@@ -118,6 +118,7 @@ func RemoveUser(id string) {
 			db.Users[i].PRIKey = ecdsa.PrivateKey{}
 			db.Users[i].Premium = false
 			db.Users[i].Sessions = []Session{}
+			break
 		}
 	}
 	for i, channel := range db.PublicChannels {
@@ -244,6 +245,7 @@ func RemoveMessagePublic(channel string, id string) {
 			for j, message := range c.Messages {
 				if message.ID == id {
 					db.PublicChannels[i].Messages[j] = Message{db.PublicChannels[i].Messages[j].ID, db.PublicChannels[i].Messages[j].SenderID, db.PublicChannels[i].Messages[j].Time, "[deleted]", db.PublicChannels[i].Messages[j].ReplyTo, []string{}, []string{}}
+					break
 				}
 			}
 		}

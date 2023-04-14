@@ -39,9 +39,14 @@ func CleanSessions() {
 		db := data.OpenDB()
 		for _, user := range db.Users {
 			for i, session := range user.Sessions {
+				del := 0
+				if i-del >= len(user.Sessions) {
+					break
+				}
 				if session.Expires.Before(time.Now()) {
 					user.Sessions[i] = user.Sessions[len(user.Sessions)-1]
 					user.Sessions = user.Sessions[:len(user.Sessions)-1]
+					del++
 				}
 			}
 		}
