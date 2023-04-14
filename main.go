@@ -38,8 +38,8 @@ func CleanSessions() {
 	for {
 		db := data.OpenDB()
 		for _, user := range db.Users {
+			del := 0
 			for i, session := range user.Sessions {
-				del := 0
 				if i-del >= len(user.Sessions) {
 					break
 				}
