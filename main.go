@@ -50,6 +50,7 @@ func CleanSessions() {
 				}
 			}
 		}
+		data.SaveDB(db)
 		time.Sleep(time.Minute * 10)
 	}
 }
