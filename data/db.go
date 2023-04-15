@@ -24,6 +24,7 @@ type User struct {
 	Requests []string         `json:"join_requests"` //Current open requests by private channels
 	Premium  bool             `json:"premium"`       //If the user has a premium account
 	Sessions []Session        `json:"sessions"`      //The user's sessions
+	Recovery string           `json:"recovery"`      //Recovery code
 }
 
 type Session struct {
@@ -100,7 +101,7 @@ func AddUser(username string, password string) (userID string) {
 
 	pub, pri := encryption.GenerateKeys(username, password)
 	id := Idgen(8)
-	db.Users = append(db.Users, User{username, id, encryption.GenerateHash512(password, id), "defaults/user.jpg", "", pub, pri, []string{}, false, []string{}, false, []Session{}})
+	db.Users = append(db.Users, User{username, id, encryption.GenerateHash512(password, id), "defaults/user.jpg", "", pub, pri, []string{}, false, []string{}, false, []Session{}, ""})
 
 	SaveDB(db)
 

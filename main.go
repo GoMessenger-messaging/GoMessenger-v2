@@ -169,6 +169,9 @@ func ChangePhoto(w http.ResponseWriter, r *http.Request) {
 func ChangeStatus(w http.ResponseWriter, r *http.Request) {
 	//TODO
 }
+func ChangeRecoveryCode(w http.ResponseWriter, r *http.Request) {
+	//TODO
+}
 func JoinChannel(w http.ResponseWriter, r *http.Request) {
 	valid, status := CheckSession(r)
 	if valid {
@@ -254,6 +257,9 @@ func RemoveSessions(w http.ResponseWriter, r *http.Request) {
 	}
 }
 func UpgradeAccount(w http.ResponseWriter, r *http.Request) {
+	//TODO
+}
+func RecoverAccount(w http.ResponseWriter, r *http.Request) {
 	//TODO
 }
 func DeleteAccount(w http.ResponseWriter, r *http.Request) {
@@ -391,11 +397,13 @@ func main() {
 	http.HandleFunc("/api/account/edit/password", ChangePassword)
 	http.HandleFunc("/api/account/edit/photo", ChangePhoto)
 	http.HandleFunc("/api/account/edit/status", ChangeStatus)
+	http.HandleFunc("/api/account/edit/recovery", ChangeRecoveryCode)
 	http.HandleFunc("/api/account/edit/join", JoinChannel)
 	http.HandleFunc("/api/account/edit/leave/public", LeavePublicChannel)
 	http.HandleFunc("/api/account/edit/leave/private", LeavePrivateChannel)
 	http.HandleFunc("/api/account/edit/sessions", RemoveSessions)
 	http.HandleFunc("/api/account/edit/upgrade", UpgradeAccount)
+	http.HandleFunc("/api/account/edit/recover", RecoverAccount)
 	http.HandleFunc("/api/account/edit/delete", DeleteAccount)
 	http.HandleFunc("/api/account/channels", GetChannels)
 	http.HandleFunc("/api/channel/create/public", CreatePublicChannel)
