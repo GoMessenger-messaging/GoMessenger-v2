@@ -80,7 +80,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 	user := data.GetUser(id)
 
-	if encryption.GenerateHash512(password, user.Username) == user.PWHash {
+	if encryption.GenerateHash512(password, user.ID) == user.PWHash {
 		session := data.Idgen(32)
 		hash := encryption.GenerateHash256(id, session)
 		user.Sessions = append(user.Sessions, data.Session{ID: hash, Expires: time.Now().Add(time.Hour)})
@@ -152,8 +152,8 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 	passwordOld := r.Form.Get("old_password")
 	if passwordNew != "" {
 		user := data.GetUser(id)
-		if encryption.GenerateHash512(passwordOld, user.Username) == user.PWHash {
-			user.PWHash = encryption.GenerateHash512(passwordNew, user.Username)
+		if encryption.GenerateHash512(passwordOld, user.ID) == user.PWHash {
+			user.PWHash = encryption.GenerateHash512(passwordNew, user.ID)
 			data.ChangeUser(user)
 			w.WriteHeader(201)
 		} else {
@@ -266,7 +266,7 @@ func DeleteAccount(w http.ResponseWriter, r *http.Request) {
 	password := r.Form.Get("password")
 
 	user := data.GetUser(id)
-	if encryption.GenerateHash512(password, user.Username) == user.PWHash {
+	if encryption.GenerateHash512(password, user.ID) == user.PWHash {
 		data.RemoveUser(id)
 		w.WriteHeader(201)
 	} else {
@@ -345,7 +345,7 @@ func DeletePublicChannel(w http.ResponseWriter, r *http.Request) {
 	channel := data.GetPublicChannel(channelId)
 	if channel.ID != "" {
 		user := data.GetUser(id)
-		if encryption.GenerateHash512(password, user.Username) == user.PWHash {
+		if encryption.GenerateHash512(password, user.ID) == user.PWHash {
 			data.RemovePublicChannel(channelId)
 			w.WriteHeader(201)
 		} else {

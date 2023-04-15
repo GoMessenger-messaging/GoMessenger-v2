@@ -100,7 +100,7 @@ func AddUser(username string, password string) (userID string) {
 
 	pub, pri := encryption.GenerateKeys(username, password)
 	id := Idgen(8)
-	db.Users = append(db.Users, User{username, id, encryption.GenerateHash512(password, username), "defaults/user.jpg", "", pub, pri, []string{}, false, []string{}, false, []Session{}})
+	db.Users = append(db.Users, User{username, id, encryption.GenerateHash512(password, id), "defaults/user.jpg", "", pub, pri, []string{}, false, []string{}, false, []Session{}})
 
 	SaveDB(db)
 
