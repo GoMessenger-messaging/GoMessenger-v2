@@ -384,7 +384,7 @@ func GetPrivateMessages(w http.ResponseWriter, r *http.Request) {
 func main() {
 	fmt.Println(time.Now().UTC().String() + " | Starting server...")
 
-	go CleanSessions()
+	//go CleanSessions()
 	fmt.Println(time.Now().UTC().String() + " | Session cleaner started.")
 
 	//API
@@ -443,7 +443,8 @@ func main() {
 	http.HandleFunc("/webclient.css", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, "pages/webclient.css") })
 	http.HandleFunc("/webclient.js", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, "pages/webclient.js") })
 	http.Handle("/uploads/", http.FileServer(http.Dir("")))
-	http.HandleFunc("/publickey", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/publickey-contact@gomessenger.link.asc", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/pgp-keys")
 		http.ServeFile(w, r, "pages/publickey.contact@gomessenger.link-f1884ecfd460d5f66d9fbccd67366d95cfe8d84d.asc")
 	})
 	http.HandleFunc("/robots.txt", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, "pages/robots.txt") })
