@@ -37,18 +37,14 @@ func CheckSession(r *http.Request) (bool, int) {
 func CleanSessions() {
 	for {
 		db := data.OpenDB()
-		for _, user := range db.Users {
-			del := 0
-			for i, session := range user.Sessions {
-				if i-del >= len(user.Sessions) {
-					break
-				}
-				if session.Expires.Before(time.Now()) {
-					user.Sessions[i] = user.Sessions[len(user.Sessions)-1]
+		for i, user := range db.Users {
+			for j := len(user.Sessions) - 1; j >= 0; j-- {
+				if user.Sessions[j].Expires.Before(time.Now()) {
+					user.Sessions[j] = user.Sessions[len(user.Sessions)-1]
 					user.Sessions = user.Sessions[:len(user.Sessions)-1]
-					del++
 				}
 			}
+			db.Users[i] = user
 		}
 		data.SaveDB(db)
 		time.Sleep(time.Minute * 10)
@@ -384,7 +380,7 @@ func GetPrivateMessages(w http.ResponseWriter, r *http.Request) {
 func main() {
 	fmt.Println(time.Now().UTC().String() + " | Starting server...")
 
-	//go CleanSessions()
+	go CleanSessions()
 	fmt.Println(time.Now().UTC().String() + " | Session cleaner started.")
 
 	//API
