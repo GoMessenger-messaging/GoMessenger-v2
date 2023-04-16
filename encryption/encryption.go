@@ -1,27 +1,26 @@
 package encryption
 
 import (
+	"crypto"
 	"crypto/aes"
-	"crypto/ecdsa"
-	"crypto/elliptic"
+	"crypto/cipher"
 	"crypto/rand"
+	"crypto/rsa"
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/base64"
 	"fmt"
-	"math/big"
 	"time"
 )
 
-func GenerateKeys(username string, password string) (publicKey ecdsa.PublicKey, privateKey ecdsa.PrivateKey) {
-	priKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+func GenerateKeys() (publicKey rsa.PublicKey, privateKey crypto.PrivateKey) {
+	priKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		fmt.Println(time.Now().UTC().String() + " | Error generating privateKey: " + err.Error())
 	}
 
 	pubKey := priKey.PublicKey
-	priKeyEnc := new(big.Int).SetBytes(GenerateCiphertext(username, password, priKey.D.Bytes()))
-	return pubKey, ecdsa.PrivateKey{priKey.PublicKey, priKeyEnc}
+	return pubKey, priKey
 }
 func GenerateHash256(salt string, str string) (ret string) {
 	hash := sha256.Sum256([]byte(salt + str + salt))
@@ -31,27 +30,56 @@ func GenerateHash512(salt string, str string) (ret string) {
 	hash := sha512.Sum512([]byte(salt + str + salt))
 	return base64.StdEncoding.EncodeToString(hash[:])
 }
-func GenerateCiphertext(username string, password string, plaintext []byte) (ret []byte) {
-	key16 := GenerateHash256(username, password)
+func GenerateCiphertext(id string, password string, plaintext []byte) (ret []byte) {
+	key := GenerateHash256(id, password)
 
-	c, err := aes.NewCipher([]byte(key16[:16]))
+	c, err := aes.NewCipher([]byte(key[:32]))
 	if err != nil {
 		fmt.Println(time.Now().UTC().String() + " | Error generating ciphertext: " + err.Error())
 	}
-	ct := make([]byte, len(plaintext))
-	c.Encrypt(ct, plaintext)
-
-	return ct
+	gcm, err := cipher.NewGCM(c)
+	if err != nil {
+		fmt.Println(time.Now().UTC().String() + " | Error generating ciphertext: " + err.Error())
+	}
+	nonce := make([]byte, gcm.NonceSize())
+	_, err = rand.Read(nonce)
+	if err != nil {
+		fmt.Println(time.Now().UTC().String() + " | Error generating ciphertext: " + err.Error())
+	}
+	return gcm.Seal(nonce, nonce, plaintext, nil)
 }
-func GeneratePlaintext(username string, password string, ciphertext []byte) (ret []byte) {
-	key16 := GenerateHash256(username, password)
+func GeneratePlaintext(id string, password string, ciphertext []byte) (ret []byte) {
+	key := GenerateHash256(id, password)
 
-	c, err := aes.NewCipher([]byte(key16[:16]))
+	c, err := aes.NewCipher([]byte(key[:32]))
 	if err != nil {
 		fmt.Println(time.Now().UTC().String() + " | Error generating plaintext: " + err.Error())
 	}
-	pt := make([]byte, len(ciphertext))
-	c.Decrypt(pt, ciphertext)
+	gcm, err := cipher.NewGCM(c)
+	if err != nil {
+		fmt.Println(time.Now().UTC().String() + " | Error generating plaintext: " + err.Error())
+	}
+	nonceSize := gcm.NonceSize()
+	nonce, ciphertext := ciphertext[:nonceSize], ciphertext[nonceSize:]
+	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
+	if err != nil {
+		fmt.Println(time.Now().UTC().String() + " | Error generating plaintext: " + err.Error())
+	}
+	return plaintext
+}
+func Encrypt(pubKey rsa.PublicKey, plaintext []byte) (ret []byte) {
+	ciphertext, err := rsa.EncryptOAEP(sha256.New(), rand.Reader, &pubKey, plaintext, nil)
+	if err != nil {
+		fmt.Println(time.Now().UTC().String() + " | Error encrypting message: " + err.Error())
+	}
 
-	return pt
+	return ciphertext
+}
+func Decrypt(priKey crypto.PrivateKey, ciphertext []byte) (ret []byte) {
+	plaintext, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, priKey.(*rsa.PrivateKey), ciphertext, nil)
+	if err != nil {
+		fmt.Println(time.Now().UTC().String() + " | Error decrypting message: " + err.Error())
+	}
+
+	return plaintext
 }

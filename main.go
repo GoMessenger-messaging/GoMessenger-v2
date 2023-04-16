@@ -154,6 +154,9 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 		user := data.GetUser(id)
 		if encryption.GenerateHash512(passwordOld, user.ID) == user.PWHash {
 			user.PWHash = encryption.GenerateHash512(passwordNew, user.ID)
+			priKey := user.PRIKey
+			newPriKey := encryption.GenerateCiphertext(id, passwordNew, encryption.GeneratePlaintext(id, passwordOld, priKey))
+			user.PRIKey = newPriKey
 			data.ChangeUser(user)
 			w.WriteHeader(201)
 		} else {

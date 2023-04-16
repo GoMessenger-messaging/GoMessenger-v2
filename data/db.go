@@ -1,8 +1,8 @@
 package data
 
 import (
-	"crypto/ecdsa"
 	"crypto/rand"
+	"crypto/rsa"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -12,19 +12,19 @@ import (
 )
 
 type User struct {
-	Username string           `json:"username"`      //Display name
-	ID       string           `json:"id"`            //Unique identifier
-	PWHash   string           `json:"pw_hash"`       //Hashed password
-	Photo    string           `json:"photo"`         //Profile photo
-	Status   string           `json:"status"`        //Status message
-	PUBKey   ecdsa.PublicKey  `json:"pub_key"`       //RSA Public Key
-	PRIKey   ecdsa.PrivateKey `json:"pri_key"`       //RSA Private Key
-	Access   []string         `json:"access"`        //What private channels the user has access to
-	Request  bool             `json:"join_request"`  //If Private channels have to send a request to add this user
-	Requests []string         `json:"join_requests"` //Current open requests by private channels
-	Premium  bool             `json:"premium"`       //If the user has a premium account
-	Sessions []Session        `json:"sessions"`      //The user's sessions
-	Recovery string           `json:"recovery"`      //Recovery code
+	Username string        `json:"username"`      //Display name
+	ID       string        `json:"id"`            //Unique identifier
+	PWHash   string        `json:"pw_hash"`       //Hashed password
+	Photo    string        `json:"photo"`         //Profile photo
+	Status   string        `json:"status"`        //Status message
+	PUBKey   rsa.PublicKey `json:"pub_key"`       //Public Key
+	PRIKey   []byte        `json:"pri_key"`       //Private Key
+	Access   []string      `json:"access"`        //What private channels the user has access to
+	Request  bool          `json:"join_request"`  //If Private channels have to send a request to add this user
+	Requests []string      `json:"join_requests"` //Current open requests by private channels
+	Premium  bool          `json:"premium"`       //If the user has a premium account
+	Sessions []Session     `json:"sessions"`      //The user's sessions
+	Recovery string        `json:"recovery"`      //Recovery code
 }
 
 type Session struct {
@@ -99,9 +99,15 @@ func SaveDB(db DB) {
 func AddUser(username string, password string) (userID string) {
 	db := OpenDB()
 
-	pub, pri := encryption.GenerateKeys(username, password)
 	id := Idgen(8)
-	db.Users = append(db.Users, User{username, id, encryption.GenerateHash512(password, id), "defaults/user.jpg", "", pub, pri, []string{}, false, []string{}, false, []Session{}, ""})
+
+	pub, pri := encryption.GenerateKeys()
+	priKeyJson, err := json.Marshal(pri)
+	if err != nil {
+		fmt.Println(time.Now().UTC().String() + " | Error marshalling privateKey: " + err.Error())
+	}
+	priKeyEnc := encryption.GenerateCiphertext(id, password, priKeyJson)
+	db.Users = append(db.Users, User{username, id, encryption.GenerateHash512(password, id), "defaults/user.jpg", "", pub, priKeyEnc, []string{}, false, []string{}, false, []Session{}, ""})
 
 	SaveDB(db)
 
@@ -115,8 +121,8 @@ func RemoveUser(id string) {
 			db.Users[i].Username = "[deleted]"
 			db.Users[i].PWHash = ""
 			db.Users[i].Photo = "defaults/user.jpg"
-			db.Users[i].PUBKey = ecdsa.PublicKey{}
-			db.Users[i].PRIKey = ecdsa.PrivateKey{}
+			db.Users[i].PUBKey = rsa.PublicKey{}
+			db.Users[i].PRIKey = nil
 			db.Users[i].Premium = false
 			db.Users[i].Sessions = []Session{}
 			break
