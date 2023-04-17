@@ -17,6 +17,12 @@ type ViewAccount struct {
 	Status   string `json:"status"`
 	Premium  bool   `json:"premium"`
 }
+type GetChannel struct {
+	Name        string `json:"name"`
+	ID          string `json:"id"`
+	Photo       string `json:"photo"`
+	Description string `json:"description"`
+}
 
 func CheckSession(r *http.Request) (bool, int) {
 	err := r.ParseForm()
@@ -63,7 +69,8 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 		id := data.AddUser(username, password)
 		_, wErr := w.Write([]byte(id))
 		if wErr != nil {
-			fmt.Println(time.Now().UTC().String() + " | Error responding to Signup request: " + err.Error())
+			w.WriteHeader(500)
+			fmt.Println(time.Now().UTC().String() + " | Error responding to Signup request: " + wErr.Error())
 		}
 	} else {
 		w.WriteHeader(400)
@@ -87,11 +94,13 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		data.ChangeUser(user)
 		_, wErr := w.Write([]byte(session))
 		if wErr != nil {
+			w.WriteHeader(500)
 			fmt.Println(time.Now().UTC().String() + " | Error responding to Login request: " + wErr.Error())
 		}
 	} else {
 		_, wErr := w.Write([]byte(""))
 		if wErr != nil {
+			w.WriteHeader(500)
 			fmt.Println(time.Now().UTC().String() + " | Error responding to Login request: " + wErr.Error())
 		}
 	}
@@ -108,10 +117,13 @@ func ViewInfo(w http.ResponseWriter, r *http.Request) {
 	resp := ViewAccount{Username: user.Username, ID: user.ID, Photo: user.Photo, Status: user.Status, Premium: user.Premium}
 	jResp, jErr := json.Marshal(resp)
 	if jErr != nil {
+		w.WriteHeader(500)
 		fmt.Println(time.Now().UTC().String() + " | Error marshalling ViewInfo response: " + jErr.Error())
+		return
 	}
 	_, wErr := w.Write(jResp)
 	if wErr != nil {
+		w.WriteHeader(500)
 		fmt.Println(time.Now().UTC().String() + " | Error responding to ViewInfo request: " + wErr.Error())
 	}
 }
@@ -170,7 +182,30 @@ func ChangePhoto(w http.ResponseWriter, r *http.Request) {
 	//TODO
 }
 func ChangeStatus(w http.ResponseWriter, r *http.Request) {
-	//TODO
+	valid, status := CheckSession(r)
+	if valid {
+		err := r.ParseForm()
+		if err != nil {
+			w.WriteHeader(400)
+			return
+		}
+		id := r.Form.Get("id")
+		userStatus := r.Form.Get("status")
+		if userStatus != "" {
+			user := data.GetUser(id)
+			user.Status = userStatus
+			data.ChangeUser(user)
+			w.WriteHeader(201)
+		} else {
+			w.WriteHeader(400)
+		}
+	} else {
+		if status == 1 {
+			w.WriteHeader(400)
+		} else if status == 2 {
+			w.WriteHeader(401)
+		}
+	}
 }
 func ChangeRecoveryCode(w http.ResponseWriter, r *http.Request) {
 	//TODO
@@ -213,7 +248,7 @@ func LeavePublicChannel(w http.ResponseWriter, r *http.Request) {
 		id := r.Form.Get("id")
 		channelId := r.Form.Get("channel")
 		channel := data.GetPublicChannel(channelId)
-		if channel.ID != "" {
+		if channel.ID == channelId {
 			user := data.GetUser(id)
 			for i, id := range user.Access {
 				if id == channel.ID {
@@ -283,7 +318,53 @@ func DeleteAccount(w http.ResponseWriter, r *http.Request) {
 	}
 }
 func GetChannels(w http.ResponseWriter, r *http.Request) {
-
+	valid, status := CheckSession(r)
+	if valid {
+		err := r.ParseForm()
+		if err != nil {
+			w.WriteHeader(400)
+			return
+		}
+		id := r.Form.Get("id")
+		user := data.GetUser(id)
+		pubChannels := []GetChannel{}
+		for i, channelId := range user.Access {
+			channel := data.GetPublicChannel(channelId)
+			if channel.ID == channelId {
+				blocked := false
+				for _, userId := range channel.BlockedIDs {
+					if userId == user.ID {
+						blocked = true
+					}
+				}
+				if !blocked {
+					pubChannels = append(pubChannels, GetChannel{ID: channel.ID, Name: channel.Name, Photo: channel.Photo, Description: channel.Description})
+				} else {
+					user.Access[i] = user.Access[len(user.Access)-1]
+					user.Access = user.Access[:len(user.Access)-1]
+					data.ChangeUser(user)
+				}
+			}
+		}
+		out, err := json.Marshal(pubChannels)
+		if err != nil {
+			w.WriteHeader(500)
+			fmt.Println(time.Now().UTC().String() + " | Error marshalling GetChannels response: " + err.Error())
+			return
+		}
+		//TODO: Private Channels
+		_, wErr := w.Write(out)
+		if wErr != nil {
+			w.WriteHeader(500)
+			fmt.Println(time.Now().UTC().String() + " | Error responding to GetChannels request: " + wErr.Error())
+		}
+	} else {
+		if status == 1 {
+			w.WriteHeader(400)
+		} else if status == 2 {
+			w.WriteHeader(401)
+		}
+	}
 }
 func CreatePublicChannel(w http.ResponseWriter, r *http.Request) {
 	valid, status := CheckSession(r)
@@ -313,7 +394,33 @@ func CreatePrivateChannel(w http.ResponseWriter, r *http.Request) {
 	//TODO
 }
 func ChangePublicChannelName(w http.ResponseWriter, r *http.Request) {
-	//TODO
+	valid, status := CheckSession(r)
+	if valid {
+		err := r.ParseForm()
+		if err != nil {
+			w.WriteHeader(400)
+			return
+		}
+		id := r.Form.Get("id")
+		channelId := r.Form.Get("channel")
+		name := r.Form.Get("name")
+		channel := data.GetPublicChannel(channelId)
+		for _, admin := range channel.Admins {
+			if admin == id {
+				channel.Name = name
+				data.ChangePublicChannel(channel)
+				w.WriteHeader(201)
+				return
+			}
+		}
+		w.WriteHeader(401)
+	} else {
+		if status == 1 {
+			w.WriteHeader(400)
+		} else if status == 2 {
+			w.WriteHeader(401)
+		}
+	}
 }
 func ChangePrivateChannelName(w http.ResponseWriter, r *http.Request) {
 	//TODO
@@ -325,13 +432,65 @@ func ChangePrivateChannelPhoto(w http.ResponseWriter, r *http.Request) {
 	//TODO
 }
 func ChangePublicChannelDescription(w http.ResponseWriter, r *http.Request) {
-	//TODO
+	valid, status := CheckSession(r)
+	if valid {
+		err := r.ParseForm()
+		if err != nil {
+			w.WriteHeader(400)
+			return
+		}
+		id := r.Form.Get("id")
+		channelId := r.Form.Get("channel")
+		description := r.Form.Get("description")
+		channel := data.GetPublicChannel(channelId)
+		for _, admin := range channel.Admins {
+			if admin == id {
+				channel.Description = description
+				data.ChangePublicChannel(channel)
+				w.WriteHeader(201)
+				return
+			}
+		}
+		w.WriteHeader(401)
+	} else {
+		if status == 1 {
+			w.WriteHeader(400)
+		} else if status == 2 {
+			w.WriteHeader(401)
+		}
+	}
 }
 func ChangePrivateChannelDescription(w http.ResponseWriter, r *http.Request) {
 	//TODO
 }
 func ChangePublicChannelMembers(w http.ResponseWriter, r *http.Request) {
-	//TODO
+	valid, status := CheckSession(r)
+	if valid {
+		err := r.ParseForm()
+		if err != nil {
+			w.WriteHeader(400)
+			return
+		}
+		id := r.Form.Get("id")
+		channelId := r.Form.Get("channel")
+		memberId := r.Form.Get("member")
+		channel := data.GetPublicChannel(channelId)
+		for _, admin := range channel.Admins {
+			if admin == id {
+				channel.BlockedIDs = append(channel.BlockedIDs, memberId)
+				data.ChangePublicChannel(channel)
+				w.WriteHeader(201)
+				return
+			}
+		}
+		w.WriteHeader(401)
+	} else {
+		if status == 1 {
+			w.WriteHeader(400)
+		} else if status == 2 {
+			w.WriteHeader(401)
+		}
+	}
 }
 func ChangePrivateChannelMembers(w http.ResponseWriter, r *http.Request) {
 	//TODO
@@ -352,11 +511,17 @@ func DeletePublicChannel(w http.ResponseWriter, r *http.Request) {
 	password := r.Form.Get("password")
 	channelId := r.Form.Get("channel")
 	channel := data.GetPublicChannel(channelId)
-	if channel.ID != "" {
+	if channel.ID == channelId {
 		user := data.GetUser(id)
 		if encryption.GenerateHash512(password, user.ID) == user.PWHash {
-			data.RemovePublicChannel(channelId)
-			w.WriteHeader(201)
+			for _, admin := range channel.Admins {
+				if admin == id {
+					data.RemovePublicChannel(channelId)
+					w.WriteHeader(201)
+					return
+				}
+			}
+			w.WriteHeader(401)
 		} else {
 			w.WriteHeader(401)
 		}
@@ -367,22 +532,110 @@ func DeletePublicChannel(w http.ResponseWriter, r *http.Request) {
 func DeletePrivateChannel(w http.ResponseWriter, r *http.Request) {
 	//TODO
 }
+func GetPublicMessages(w http.ResponseWriter, r *http.Request) {
+	valid, status := CheckSession(r)
+	if valid {
+		err := r.ParseForm()
+		if err != nil {
+			w.WriteHeader(400)
+			return
+		}
+		id := r.Form.Get("id")
+		channelId := r.Form.Get("channel")
+		channel := data.GetPublicChannel(channelId)
+		for _, blockedId := range channel.BlockedIDs {
+			if blockedId == id {
+				w.WriteHeader(401)
+				return
+			}
+		}
+		out, err := json.Marshal(channel.Messages)
+		if err != nil {
+			w.WriteHeader(500)
+			fmt.Println(time.Now().UTC().String() + " | Error marshalling GetPublicMessages response: " + err.Error())
+			return
+		}
+		_, wErr := w.Write(out)
+		if wErr != nil {
+			w.WriteHeader(500)
+			fmt.Println(time.Now().UTC().String() + " | Error responding to GetPublicMessages request" + wErr.Error())
+			return
+		}
+	} else {
+		if status == 1 {
+			w.WriteHeader(400)
+		} else if status == 2 {
+			w.WriteHeader(401)
+		}
+	}
+}
+func GetPrivateMessages(w http.ResponseWriter, r *http.Request) {
+	//TODO
+}
 func SendPublicMessage(w http.ResponseWriter, r *http.Request) {
-
+	valid, status := CheckSession(r)
+	if valid {
+		err := r.ParseForm()
+		if err != nil {
+			w.WriteHeader(400)
+			return
+		}
+		id := r.Form.Get("id")
+		channelId := r.Form.Get("channel")
+		message := r.Form.Get("message")
+		channel := data.GetPublicChannel(channelId)
+		for _, blockedId := range channel.BlockedIDs {
+			if blockedId == id {
+				w.WriteHeader(401)
+				return
+			}
+		}
+		data.AddMessagePublic(channelId, id, message, "", []string{}, []string{})
+	} else {
+		if status == 1 {
+			w.WriteHeader(400)
+		} else if status == 2 {
+			w.WriteHeader(401)
+		}
+	}
 }
 func SendPrivateMessage(w http.ResponseWriter, r *http.Request) {
 	//TODO
 }
 func DeletePublicMessage(w http.ResponseWriter, r *http.Request) {
-
+	valid, status := CheckSession(r)
+	if valid {
+		err := r.ParseForm()
+		if err != nil {
+			w.WriteHeader(400)
+			return
+		}
+		id := r.Form.Get("id")
+		channelId := r.Form.Get("channel")
+		messageId := r.Form.Get("message")
+		channel := data.GetPublicChannel(channelId)
+		for _, admin := range channel.Admins {
+			if admin == id {
+				data.RemoveMessagePublic(channelId, messageId)
+				w.WriteHeader(201)
+				return
+			}
+		}
+		if data.GetMessagePublic(channelId, messageId).SenderID == id {
+			data.RemoveMessagePublic(channelId, messageId)
+			w.WriteHeader(201)
+			return
+		}
+		w.WriteHeader(401)
+	} else {
+		if status == 1 {
+			w.WriteHeader(400)
+		} else if status == 2 {
+			w.WriteHeader(401)
+		}
+	}
 }
 func DeletePrivateMessage(w http.ResponseWriter, r *http.Request) {
-	//TODO
-}
-func GetPublicMessages(w http.ResponseWriter, r *http.Request) {
-
-}
-func GetPrivateMessages(w http.ResponseWriter, r *http.Request) {
 	//TODO
 }
 
@@ -423,12 +676,12 @@ func main() {
 	http.HandleFunc("/api/channel/edit/admins/private", ChangePrivateChannelAdmins)
 	http.HandleFunc("/api/channel/edit/delete/public", DeletePublicChannel)
 	http.HandleFunc("/api/channel/edit/delete/private", DeletePrivateChannel)
+	http.HandleFunc("/api/channel/messages/public", GetPublicMessages)
+	http.HandleFunc("/api/channel/messages/private", GetPrivateMessages)
 	http.HandleFunc("/api/message/send/public", SendPublicMessage)
 	http.HandleFunc("/api/message/send/private", SendPrivateMessage)
 	http.HandleFunc("/api/message/delete/public", DeletePublicMessage)
 	http.HandleFunc("/api/message/delete/private", DeletePrivateMessage)
-	http.HandleFunc("/api/channel/messages/public", GetPublicMessages)
-	http.HandleFunc("/api/channel/messages/private", GetPrivateMessages)
 
 	//Pages
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {

@@ -244,6 +244,20 @@ func AddMessagePublic(channel string, sender string, content string, replyTo str
 
 	SaveDB(db)
 }
+func GetMessagePublic(channel string, id string) (messageData Message) {
+	db := OpenDB()
+
+	for _, c := range db.PublicChannels {
+		if c.ID == channel {
+			for _, message := range c.Messages {
+				if message.ID == id {
+					return message
+				}
+			}
+		}
+	}
+	return Message{}
+}
 func RemoveMessagePublic(channel string, id string) {
 	db := OpenDB()
 
@@ -261,6 +275,9 @@ func RemoveMessagePublic(channel string, id string) {
 	SaveDB(db)
 }
 func AddMessagePrivate(channel string, sender string, content string, replyTo string, renderMedia []string, attachments []string) {
+	//TODO
+}
+func GetMessagePrivate(channel string, id string) {
 	//TODO
 }
 func RemoveMessagePrivate(channel string, id string) {
