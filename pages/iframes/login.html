@@ -2,9 +2,49 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Login/Signup - GoMessenger</title>
+    <link rel="stylesheet" href="/webclient/login.css">
 </head>
 <body>
-
+    <div id="header">
+        <div id="login">
+            <h2>LOG IN</h2>
+        </div>
+        <div id="signup">
+            <h2>SIGN UP</h2>
+        </div>
+    </div>
+    <div id="main">
+        <div id="login-form">
+            <form>
+                <label for="id">ID</label>
+                <br>
+                <input type="text" id="id" minlength="8" maxlength="8">
+                <br>
+                <label for="password">Password</label>
+                <br>
+                <input type="password" id="password">
+                <br>
+                <button type="button" onclick="parent.login()">Log In</button>
+            </form>
+        </div>
+        <div id="signup-form">
+            <form>
+                <label for="username">Username</label>
+                <br>
+                <input type="text" id="username" minlength="1">
+                <br>
+                <label for="pw">Password</label>
+                <br>
+                <input type="password" id="pw">
+                <br>
+                <label for="pw2">Confirm Password</label>
+                <br>
+                <input type="password" id="pw2">
+                <br>
+                <button type="button" onclick="parent.signup()">Sign Up</button>
+            </form>
+        </div>
+    </div>
 </body>
 </html>

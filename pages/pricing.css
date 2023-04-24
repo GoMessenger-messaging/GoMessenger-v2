@@ -1,6 +1,7 @@
 html, body {
     position: relative;
     height: 100%;
+    margin: 0;
     background-color: darkgray;
     color: snow;
     font-family: "Open Sans", sans-serif;
@@ -28,9 +29,18 @@ html, body {
 #header-right {
     position: relative;
     float: right;
-    height: inherit;
+    margin-bottom: 0;
+    margin-top: auto;
     text-align: center;
-    overflow-y: hidden;
+    overflow-y: auto;
+}
+#home, #about, #pricing, #app {
+    width: 25%;
+}
+@media (max-width: 500px) {
+    #header-right {
+
+    }
 }
 #home {
     background-color: yellowgreen;

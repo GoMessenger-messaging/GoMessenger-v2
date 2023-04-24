@@ -1,0 +1,20 @@
+#header {
+    height: 50px;
+    width: 100%;
+}
+#login {
+    width: 50%;
+    float: left;
+    place-content: center;
+}
+#signup {
+    width: 50%;
+    float: right;
+    place-content: center;
+}
+#login-form {
+
+}
+#signup-form {
+    visibility: hidden;
+}

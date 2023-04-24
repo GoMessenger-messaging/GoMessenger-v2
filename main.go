@@ -699,6 +699,8 @@ func main() {
 	http.HandleFunc("/pricing.css", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, "pages/pricing.css") })
 	http.HandleFunc("/about", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, "pages/about.html") })
 	http.HandleFunc("/about.css", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, "pages/about.css") })
+	http.HandleFunc("/news", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, "pages/news.html") })
+	http.HandleFunc("/news.css", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, "pages/news.css") })
 	http.HandleFunc("/webclient", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, "pages/webclient.html") })
 	http.HandleFunc("/webclient.css", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, "pages/webclient.css") })
 	http.HandleFunc("/webclient.js", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, "pages/webclient.js") })
